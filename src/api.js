@@ -32,7 +32,7 @@ export const api = {
     req(`/tracks/search?q=${encodeURIComponent(q)}&limit=${limit}`),
 
   getStream: (videoId) =>
-    req(`/tracks/stream/${videoId}`),
+    Promise.resolve({ stream_url: `${BASE}/tracks/proxy/${videoId}` }),
 
   getLiked: () => req('/liked'),
 
