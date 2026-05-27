@@ -24,16 +24,12 @@ export const useStore = create((set, get) => ({
   isSearching: false,
 
   init: async (initData) => {
-    try {
-      const { access_token, user } = await api.authTelegram(initData)
-      setToken(access_token)
-      set({ user, token: access_token })
-      const data = await api.getLiked()
-      const tracks = data.tracks ?? []
-      set({ likedTracks: tracks, likedIds: new Set(tracks.map(t => t.id)) })
-    } catch (e) {
-      console.error('Auth failed', e)
-    }
+    const { access_token, user } = await api.authTelegram(initData)
+    setToken(access_token)
+    set({ user, token: access_token })
+    const data = await api.getLiked()
+    const tracks = data.tracks ?? []
+    set({ likedTracks: tracks, likedIds: new Set(tracks.map(t => t.id)) })
   },
 
   toggleLike: async (track) => {

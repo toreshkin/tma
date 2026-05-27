@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from './store'
 import LikedPage from './pages/LikedPage'
 import SearchPage from './pages/SearchPage'
@@ -9,20 +9,28 @@ const tg = window.Telegram?.WebApp
 
 export default function App() {
   const { init, user, page } = useStore()
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
     tg?.ready()
     tg?.expand()
     if (tg?.initData) {
-      init(tg.initData)
+      init(tg.initData).catch(e => setAuthError(e?.message ?? 'Ошибка'))
+    } else {
+      setAuthError('Открой приложение через Telegram')
     }
   }, [])
 
   if (!user) {
     return (
       <div className="loading">
-        <div className="loading__spinner" />
-        <p>Подключаемся…</p>
+        {authError
+          ? <p style={{ color: 'var(--fg2)', textAlign: 'center', padding: '0 24px' }}>{authError}</p>
+          : <>
+              <div className="loading__spinner" />
+              <p>Подключаемся…</p>
+            </>
+        }
       </div>
     )
   }
