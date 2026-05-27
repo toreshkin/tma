@@ -14,10 +14,13 @@ export default function App() {
   useEffect(() => {
     tg?.ready()
     tg?.expand()
-    if (tg?.initData) {
-      init(tg.initData).catch(e => setAuthError(e?.message ?? 'Ошибка'))
+    const initData = tg?.initData
+    if (initData) {
+      init(initData).catch(e => setAuthError(e?.message ?? 'Ошибка'))
     } else {
-      setAuthError('Открой приложение через Telegram')
+      const hasTg = !!window.Telegram
+      const hasWebApp = !!window.Telegram?.WebApp
+      setAuthError(`debug: Telegram=${hasTg} WebApp=${hasWebApp} initData="${initData}"`)
     }
   }, [])
 
