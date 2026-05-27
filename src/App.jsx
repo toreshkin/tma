@@ -16,11 +16,12 @@ export default function App() {
     tg?.expand()
     const initData = tg?.initData
     if (initData) {
-      init(initData).catch(e => setAuthError(e?.message ?? 'Ошибка'))
+      fetch('https://nota-backend-o90i.onrender.com/health')
+        .then(r => r.json())
+        .then(data => setAuthError(`health ok: ${JSON.stringify(data)}`))
+        .catch(e => setAuthError(`health fail: ${e.message}`))
     } else {
-      const hasTg = !!window.Telegram
-      const hasWebApp = !!window.Telegram?.WebApp
-      setAuthError(`debug: Telegram=${hasTg} WebApp=${hasWebApp} initData="${initData}"`)
+      setAuthError(`no initData. Telegram=${!!window.Telegram}`)
     }
   }, [])
 
