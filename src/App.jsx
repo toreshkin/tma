@@ -16,10 +16,9 @@ export default function App() {
     tg?.expand()
     const initData = tg?.initData
     if (initData) {
-      fetch('https://nota-backend-o90i.onrender.com/health')
-        .then(r => r.json())
-        .then(data => setAuthError(`health ok: ${JSON.stringify(data)}`))
-        .catch(e => setAuthError(`health fail: ${e.message}`))
+      fetch('https://nota-backend-o90i.onrender.com/health', { mode: 'no-cors' })
+        .then(() => setAuthError('no-cors ok — CORS problem'))
+        .catch(e => setAuthError(`no-cors fail: ${e.message}`))
     } else {
       setAuthError(`no initData. Telegram=${!!window.Telegram}`)
     }
