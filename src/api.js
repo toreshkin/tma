@@ -19,7 +19,14 @@ async function req(path, opts = {}) {
 
 export const api = {
   authTelegram: (initData) =>
-    req('/auth/telegram', { method: 'POST', body: JSON.stringify({ init_data: initData }) }),
+    fetch(`${BASE}/auth/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ init_data: initData }),
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${r.status}`) }
+      return r.json()
+    }),
 
   search: (q, limit = 20) =>
     req(`/tracks/search?q=${encodeURIComponent(q)}&limit=${limit}`),
