@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { api, setToken, BASE } from './api'
 
+// Один постоянный аудиоэлемент — iOS разрешает смену src без нового gesture
+const _a = new Audio()
+
 export const useStore = create((set, get) => ({
   // auth
   user: null,
@@ -9,7 +12,6 @@ export const useStore = create((set, get) => ({
   // player
   currentTrack: null,
   isPlaying: false,
-  audio: null,
   progress: 0,
   duration: 0,
   audioError: null,
@@ -61,16 +63,18 @@ export const useStore = create((set, get) => ({
   },
 
   play: (track, newQueue = null) => {
-    const { audio: prev, queue: curQueue, volume, isMuted } = get()
-    if (prev) { prev.pause(); prev.src = '' }
+    const { queue: curQueue, volume, isMuted } = get()
+
+    // Меняем src на том же элементе — не создаём новый
+    _a.pause()
+    _a.src = `${BASE}/tracks/proxy/${track.id}`
+    _a.volume = isMuted ? 0 : volume
 
     const q = newQueue ?? (curQueue.length ? curQueue : [track])
     const idx = q.findIndex(t => t.id === track.id)
 
-    const a = new Audio(`${BASE}/tracks/proxy/${track.id}`)
-    a.volume = isMuted ? 0 : volume
-    a.ontimeupdate = () => set({ progress: a.currentTime, duration: a.duration || 0 })
-    a.onended = () => {
+    _a.ontimeupdate = () => set({ progress: _a.currentTime, duration: _a.duration || 0 })
+    _a.onended = () => {
       const { queue, queueIndex } = get()
       const next = queueIndex + 1
       if (next < queue.length) {
@@ -80,14 +84,14 @@ export const useStore = create((set, get) => ({
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'
       }
     }
-    a.onerror = () => set({ isPlaying: false, audioError: `Ошибка ${a.error?.code}` })
+    _a.onerror = () => set({ isPlaying: false, audioError: `Ошибка ${_a.error?.code}` })
 
     set({
       currentTrack: track, isPlaying: false, progress: 0, duration: 0,
-      audio: a, audioError: null, queue: q, queueIndex: idx < 0 ? 0 : idx,
+      audioError: null, queue: q, queueIndex: idx < 0 ? 0 : idx,
     })
 
-    // Media Session — метаданные и кнопки на локскрине
+    // Media Session
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
@@ -97,24 +101,23 @@ export const useStore = create((set, get) => ({
           : [],
       })
       navigator.mediaSession.setActionHandler('play', () => {
-        get().audio?.play().then(() => {
+        _a.play().then(() => {
           set({ isPlaying: true })
           navigator.mediaSession.playbackState = 'playing'
         })
       })
       navigator.mediaSession.setActionHandler('pause', () => {
-        get().audio?.pause()
+        _a.pause()
         set({ isPlaying: false })
         navigator.mediaSession.playbackState = 'paused'
       })
       navigator.mediaSession.setActionHandler('previoustrack', () => get().playPrev())
       navigator.mediaSession.setActionHandler('nexttrack', () => get().playNext())
-      // убираем seekbackward/seekforward чтобы браузер не показывал ±10сек
       try { navigator.mediaSession.setActionHandler('seekbackward', null) } catch {}
       try { navigator.mediaSession.setActionHandler('seekforward', null) } catch {}
     }
 
-    a.play()
+    _a.play()
       .then(() => {
         set({ isPlaying: true })
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
@@ -123,14 +126,14 @@ export const useStore = create((set, get) => ({
   },
 
   togglePlay: () => {
-    const { audio, isPlaying } = get()
-    if (!audio) return
+    const { isPlaying, currentTrack } = get()
+    if (!currentTrack) return
     if (isPlaying) {
-      audio.pause()
+      _a.pause()
       set({ isPlaying: false })
       if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
     } else {
-      audio.play()
+      _a.play()
         .then(() => {
           set({ isPlaying: true })
           if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
@@ -146,9 +149,9 @@ export const useStore = create((set, get) => ({
   },
 
   playPrev: () => {
-    const { progress, queue, queueIndex, audio } = get()
+    const { progress, queue, queueIndex } = get()
     if (progress > 3) {
-      if (audio) { audio.currentTime = 0 }
+      _a.currentTime = 0
       set({ progress: 0 })
       return
     }
@@ -157,14 +160,14 @@ export const useStore = create((set, get) => ({
   },
 
   seek: (time) => {
-    const { audio } = get()
-    if (audio) { audio.currentTime = time; set({ progress: time }) }
+    _a.currentTime = time
+    set({ progress: time })
   },
 
   toggleMute: () => {
-    const { audio, isMuted, volume } = get()
+    const { isMuted, volume } = get()
     const next = !isMuted
-    if (audio) audio.volume = next ? 0 : volume
+    _a.volume = next ? 0 : volume
     set({ isMuted: next })
   },
 

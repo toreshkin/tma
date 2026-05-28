@@ -26,11 +26,7 @@ export default function Player() {
   return (
     <>
       <div className="player" onClick={() => setOpen(true)}>
-        <div
-          className="player__seekbar"
-          onClick={handleMiniSeek}
-          onTouchEnd={handleMiniSeek}
-        >
+        <div className="player__seekbar" onClick={handleMiniSeek} onTouchEnd={handleMiniSeek}>
           <div className="player__seekbar-fill" style={{ width: `${pct}%` }} />
         </div>
         <div className="player__body">
@@ -43,10 +39,7 @@ export default function Player() {
             <div className="player__title">{currentTrack.title}</div>
             <div className="player__artist">{audioError ?? currentTrack.artist}</div>
           </div>
-          <button
-            className="player__btn player__btn--main"
-            onClick={e => { e.stopPropagation(); togglePlay() }}
-          >
+          <button className="player__btn player__btn--main" onClick={e => { e.stopPropagation(); togglePlay() }}>
             {isPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
           </button>
         </div>
@@ -75,29 +68,22 @@ function FullPlayer({ onClose }) {
   function scrubAt(clientX) {
     const rect = scrubRef.current?.getBoundingClientRect()
     if (!rect || !duration) return
-    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    seek(ratio * duration)
+    seek(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * duration)
   }
-
-  function onPointerDown(e) {
-    dragging.current = true
-    e.currentTarget.setPointerCapture(e.pointerId)
-    scrubAt(e.clientX)
-  }
-  function onPointerMove(e) { if (dragging.current) scrubAt(e.clientX) }
-  function onPointerUp() { dragging.current = false }
-
-  const canPrev = queueIndex > 0 || progress > 3
-  const canNext = queueIndex < queue.length - 1
+  function onPD(e) { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); scrubAt(e.clientX) }
+  function onPM(e) { if (dragging.current) scrubAt(e.clientX) }
+  function onPU() { dragging.current = false }
 
   return (
     <div className="fp">
       {/* Blurred background */}
-      <div className="fp__bg">
-        {currentTrack.thumbnail_url
-          ? <img src={currentTrack.thumbnail_url} alt="" />
-          : <div className="fp__bg-empty" />}
-      </div>
+      {currentTrack.thumbnail_url && (
+        <div className="fp__bg" aria-hidden>
+          <img src={currentTrack.thumbnail_url} alt="" />
+        </div>
+      )}
+      {/* Dark veil for readability */}
+      <div className="fp__veil" aria-hidden />
 
       {/* Header */}
       <div className="fp__header">
@@ -106,30 +92,22 @@ function FullPlayer({ onClose }) {
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Body */}
+      {/* Main content */}
       <div className="fp__body">
-        {/* Cover */}
         <div className="fp__cover">
           {currentTrack.thumbnail_url
             ? <img src={currentTrack.thumbnail_url} alt="" />
             : <div className="fp__cover-fallback">{currentTrack.artist?.[0]}</div>}
         </div>
 
-        {/* Info */}
         <div className="fp__info">
           <div className="fp__title">{currentTrack.title}</div>
           <div className="fp__artist">{audioError ?? currentTrack.artist}</div>
         </div>
 
-        {/* Scrubber */}
         <div className="fp__scrubber-wrap">
-          <div
-            className="fp__scrubber"
-            ref={scrubRef}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-          >
+          <div className="fp__scrubber" ref={scrubRef}
+            onPointerDown={onPD} onPointerMove={onPM} onPointerUp={onPU}>
             <div className="fp__scrubber-fill" style={{ width: `${pct}%` }}>
               <div className="fp__scrubber-thumb" />
             </div>
@@ -140,27 +118,19 @@ function FullPlayer({ onClose }) {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="fp__controls">
-          <button
-            className={'fp__btn' + (isLiked ? ' fp__btn--liked' : '')}
-            onClick={() => toggleLike(currentTrack)}
-          >
+          <button className={'fp__btn' + (isLiked ? ' fp__btn--liked' : '')} onClick={() => toggleLike(currentTrack)}>
             <HeartIcon filled={isLiked} />
           </button>
-
-          <button className="fp__btn" onClick={playPrev} disabled={!canPrev}>
-            <PrevIcon size={28} />
+          <button className="fp__btn" onClick={playPrev} disabled={queueIndex <= 0 && progress <= 3}>
+            <PrevIcon size={26} />
           </button>
-
           <button className="fp__btn fp__btn--main" onClick={togglePlay}>
             {isPlaying ? <PauseIcon size={30} /> : <PlayIcon size={30} />}
           </button>
-
-          <button className="fp__btn" onClick={playNext} disabled={!canNext}>
-            <NextIcon size={28} />
+          <button className="fp__btn" onClick={playNext} disabled={queueIndex >= queue.length - 1}>
+            <NextIcon size={26} />
           </button>
-
           <button className="fp__btn" onClick={toggleMute}>
             {isMuted ? <MuteIcon /> : <SoundIcon />}
           </button>
@@ -170,20 +140,12 @@ function FullPlayer({ onClose }) {
   )
 }
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
-
 function ChevronDown() {
-  return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+  return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
 }
-
 function HeartIcon({ filled }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-    </svg>
-  )
+  return <svg width="22" height="22" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
 }
-
 function PlayIcon({ size = 22 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
 }
