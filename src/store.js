@@ -17,6 +17,7 @@ export const useStore = create((set, get) => ({
   queue: [],
   queueIndex: -1,
   isMuted: false,
+  volume: 1,
   shuffle: false,
   repeat: 'off', // 'off' | 'all' | 'one'
 
@@ -64,11 +65,11 @@ export const useStore = create((set, get) => ({
   },
 
   play: (track, newQueue = null) => {
-    const { queue: curQueue, isMuted, recentTracks } = get()
+    const { queue: curQueue, isMuted, volume, recentTracks } = get()
 
     _a.pause()
     _a.src = `${BASE}/tracks/proxy/${track.id}`
-    _a.volume = isMuted ? 0 : 1
+    _a.volume = isMuted ? 0 : volume
 
     const q = newQueue ?? (curQueue.length ? curQueue : [track])
     const idx = q.findIndex(t => t.id === track.id)
@@ -186,9 +187,14 @@ export const useStore = create((set, get) => ({
     set({ progress: time })
   },
 
+  setVolume: (v) => {
+    _a.volume = v
+    set({ volume: v, isMuted: v === 0 })
+  },
+
   toggleMute: () => {
-    const { isMuted } = get()
-    _a.volume = isMuted ? 1 : 0
+    const { isMuted, volume } = get()
+    _a.volume = isMuted ? volume : 0
     set({ isMuted: !isMuted })
   },
 

@@ -28,6 +28,23 @@ function RepeatIcon() {
 function HeartIcon({ filled }) {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20s-7-4.5-9.5-9C.7 7.5 3 4 6.5 4c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3 3.5 0 5.8 3.5 4 7-2.5 4.5-9.5 9-9.5 9z"/></svg>
 }
+function VolumeIcon({ level }) {
+  if (level === 0) return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="m16 9 5 5M21 9l-5 5"/>
+    </svg>
+  )
+  if (level < 0.5) return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M16 8a5 5 0 0 1 0 8"/>
+    </svg>
+  )
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M16 8a5 5 0 0 1 0 8M19.5 5a9 9 0 0 1 0 14"/>
+    </svg>
+  )
+}
 
 function Cover({ track, style }) {
   if (track.thumbnail_url) {
@@ -84,15 +101,27 @@ function NowPlaying({ open, onClose }) {
     shuffle, toggleShuffle,
     repeat, cycleRepeat,
     audioError,
+    volume, setVolume, isMuted, toggleMute,
   } = useStore()
 
   const scrubRef = useRef(null)
   const dragging = useRef(false)
+  const volRef = useRef(null)
+  const volDragging = useRef(false)
 
   if (!currentTrack) return null
 
   const pct = duration ? (progress / duration) * 100 : 0
   const isLiked = likedIds.has(currentTrack.id)
+
+  function volAt(clientX) {
+    const rect = volRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setVolume(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)))
+  }
+  function onVolPD(e) { volDragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); volAt(e.clientX) }
+  function onVolPM(e) { if (volDragging.current) volAt(e.clientX) }
+  function onVolPU()  { volDragging.current = false }
 
   function scrubAt(clientX) {
     const rect = scrubRef.current?.getBoundingClientRect()
@@ -179,6 +208,18 @@ function NowPlaying({ open, onClose }) {
             <RepeatIcon />
             {repeat === 'one' && <span className="m-np__repeat-badge">1</span>}
           </button>
+        </div>
+
+        <div className="m-volume">
+          <button className="m-volume__btn" onClick={toggleMute} aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}>
+            <VolumeIcon level={isMuted ? 0 : volume} />
+          </button>
+          <div className="m-volume__track" ref={volRef}
+               onPointerDown={onVolPD} onPointerMove={onVolPM} onPointerUp={onVolPU}>
+            <div className="m-volume__fill" style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}>
+              <div className="m-volume__thumb" />
+            </div>
+          </div>
         </div>
 
         {currentTrack.duration_seconds && (

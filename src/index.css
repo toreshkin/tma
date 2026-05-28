@@ -597,3 +597,34 @@ input  { font: inherit; color: inherit; background: none; border: none; outline:
   border-radius: var(--radius-pill); font-family: var(--font-mono);
   font-size: 10px; color: var(--fg-2); letter-spacing: 0.04em;
 }
+
+/* ─── VOLUME CONTROL (NowPlaying) ────────────── */
+.m-volume {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 2px; margin-bottom: 4px;
+}
+.m-volume__btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  color: var(--fg-2); display: grid; place-items: center;
+  transition: color .15s; flex-shrink: 0;
+}
+.m-volume__btn:active { color: var(--fg-1); }
+.m-volume__track {
+  flex: 1; height: 4px;
+  background: var(--border); border-radius: var(--radius-pill);
+  position: relative; cursor: pointer; touch-action: none;
+}
+.m-volume__fill {
+  height: 100%; background: var(--fg-2);
+  border-radius: var(--radius-pill); position: relative;
+  transition: background .2s;
+}
+.m-volume__track:hover .m-volume__fill,
+.m-volume__track:active .m-volume__fill { background: var(--accent); box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5); }
+.m-volume__thumb {
+  position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--fg-1); opacity: 0; transition: opacity .15s;
+}
+.m-volume__track:hover .m-volume__thumb,
+.m-volume__track:active .m-volume__thumb { opacity: 1; }
