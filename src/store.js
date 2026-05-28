@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { api, setToken, BASE } from './api'
 
-// Один постоянный аудиоэлемент — iOS разрешает смену src без нового gesture
 const _a = new Audio()
 
 export const useStore = create((set, get) => ({
@@ -17,15 +16,17 @@ export const useStore = create((set, get) => ({
   audioError: null,
   queue: [],
   queueIndex: -1,
-  volume: 1.0,
   isMuted: false,
+  shuffle: false,
+  repeat: 'off', // 'off' | 'all' | 'one'
 
   // data
   likedTracks: [],
   likedIds: new Set(),
+  recentTracks: [],
 
   // ui
-  page: 'liked',
+  page: 'home',
   searchResults: [],
   searchQuery: '',
   isSearching: false,
@@ -63,35 +64,51 @@ export const useStore = create((set, get) => ({
   },
 
   play: (track, newQueue = null) => {
-    const { queue: curQueue, volume, isMuted } = get()
+    const { queue: curQueue, isMuted, recentTracks } = get()
 
-    // Меняем src на том же элементе — не создаём новый
     _a.pause()
     _a.src = `${BASE}/tracks/proxy/${track.id}`
-    _a.volume = isMuted ? 0 : volume
+    _a.volume = isMuted ? 0 : 1
 
     const q = newQueue ?? (curQueue.length ? curQueue : [track])
     const idx = q.findIndex(t => t.id === track.id)
 
     _a.ontimeupdate = () => set({ progress: _a.currentTime, duration: _a.duration || 0 })
     _a.onended = () => {
-      const { queue, queueIndex } = get()
-      const next = queueIndex + 1
-      if (next < queue.length) {
-        get().play(queue[next])
-      } else {
-        set({ isPlaying: false })
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'
+      const { queue, queueIndex, shuffle, repeat } = get()
+      if (repeat === 'one') {
+        _a.currentTime = 0
+        _a.play().then(() => set({ isPlaying: true, progress: 0 })).catch(() => {})
+        return
       }
+      let nextIdx
+      if (shuffle) {
+        nextIdx = Math.floor(Math.random() * queue.length)
+      } else {
+        nextIdx = queueIndex + 1
+        if (nextIdx >= queue.length) {
+          if (repeat === 'all') nextIdx = 0
+          else {
+            set({ isPlaying: false })
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'
+            return
+          }
+        }
+      }
+      if (queue[nextIdx]) get().play(queue[nextIdx], queue)
     }
     _a.onerror = () => set({ isPlaying: false, audioError: `Ошибка ${_a.error?.code}` })
+
+    // track recent plays
+    const filtered = recentTracks.filter(t => t.id !== track.id)
+    const nextRecent = [track, ...filtered].slice(0, 10)
 
     set({
       currentTrack: track, isPlaying: false, progress: 0, duration: 0,
       audioError: null, queue: q, queueIndex: idx < 0 ? 0 : idx,
+      recentTracks: nextRecent,
     })
 
-    // Media Session
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: track.title,
@@ -101,15 +118,10 @@ export const useStore = create((set, get) => ({
           : [],
       })
       navigator.mediaSession.setActionHandler('play', () => {
-        _a.play().then(() => {
-          set({ isPlaying: true })
-          navigator.mediaSession.playbackState = 'playing'
-        })
+        _a.play().then(() => { set({ isPlaying: true }); navigator.mediaSession.playbackState = 'playing' })
       })
       navigator.mediaSession.setActionHandler('pause', () => {
-        _a.pause()
-        set({ isPlaying: false })
-        navigator.mediaSession.playbackState = 'paused'
+        _a.pause(); set({ isPlaying: false }); navigator.mediaSession.playbackState = 'paused'
       })
       navigator.mediaSession.setActionHandler('previoustrack', () => get().playPrev())
       navigator.mediaSession.setActionHandler('nexttrack', () => get().playNext())
@@ -143,9 +155,19 @@ export const useStore = create((set, get) => ({
   },
 
   playNext: () => {
-    const { queue, queueIndex } = get()
-    const next = queueIndex + 1
-    if (next < queue.length) get().play(queue[next])
+    const { queue, queueIndex, shuffle, repeat } = get()
+    if (!queue.length) return
+    let nextIdx
+    if (shuffle) {
+      nextIdx = Math.floor(Math.random() * queue.length)
+    } else {
+      nextIdx = queueIndex + 1
+      if (nextIdx >= queue.length) {
+        if (repeat === 'all') nextIdx = 0
+        else { set({ isPlaying: false }); return }
+      }
+    }
+    if (queue[nextIdx]) get().play(queue[nextIdx], queue)
   },
 
   playPrev: () => {
@@ -156,7 +178,7 @@ export const useStore = create((set, get) => ({
       return
     }
     const prev = Math.max(0, queueIndex - 1)
-    if (queue[prev]) get().play(queue[prev])
+    if (queue[prev]) get().play(queue[prev], queue)
   },
 
   seek: (time) => {
@@ -165,10 +187,19 @@ export const useStore = create((set, get) => ({
   },
 
   toggleMute: () => {
-    const { isMuted, volume } = get()
-    const next = !isMuted
-    _a.volume = next ? 0 : volume
-    set({ isMuted: next })
+    const { isMuted } = get()
+    _a.volume = isMuted ? 1 : 0
+    set({ isMuted: !isMuted })
+  },
+
+  toggleShuffle: (force) => {
+    const { shuffle } = get()
+    set({ shuffle: force !== undefined ? !!force : !shuffle })
+  },
+
+  cycleRepeat: () => {
+    const { repeat } = get()
+    set({ repeat: repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off' })
   },
 
   setPage: (page) => set({ page }),
