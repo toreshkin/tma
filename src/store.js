@@ -60,13 +60,14 @@ export const useStore = create((set, get) => ({
   play: (track) => {
     const { audio: prev } = get()
     if (prev) { prev.pause(); prev.src = '' }
-    set({ currentTrack: track, isPlaying: false, progress: 0, duration: 0 })
 
     const a = new Audio(`${BASE}/tracks/proxy/${track.id}`)
     a.ontimeupdate = () => set({ progress: a.currentTime, duration: a.duration || 0 })
     a.onended = () => set({ isPlaying: false })
+    set({ currentTrack: track, isPlaying: false, progress: 0, duration: 0, audio: a })
+
     a.play()
-      .then(() => set({ audio: a, isPlaying: true }))
+      .then(() => set({ isPlaying: true }))
       .catch(e => console.error('Stream failed', e))
   },
 
