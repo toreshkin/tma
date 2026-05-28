@@ -32,7 +32,7 @@ export default function SearchPage() {
       {!isSearching && searchResults.length > 0 && (
         <div className="track-list">
           {searchResults.map(track => (
-            <TrackItem key={track.id} track={track} showLike />
+            <TrackItem key={track.id} track={track} showLike playlist={searchResults} />
           ))}
         </div>
       )}

@@ -14,12 +14,12 @@ export default function LikedPage() {
       {likedTracks.length === 0 ? (
         <div className="empty">
           <div className="empty__icon">♡</div>
-          <p>Лайкни треки в десктоп-приложении — они появятся здесь</p>
+          <p>Лайкни треки — они появятся здесь</p>
         </div>
       ) : (
         <div className="track-list">
           {likedTracks.map(track => (
-            <TrackItem key={track.id} track={track} />
+            <TrackItem key={track.id} track={track} playlist={likedTracks} />
           ))}
         </div>
       )}

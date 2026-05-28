@@ -1,12 +1,12 @@
 import { useStore } from '../store'
 
-export default function TrackItem({ track, showLike = true }) {
+export default function TrackItem({ track, showLike = true, playlist = null }) {
   const { play, currentTrack, isPlaying, toggleLike, likedIds } = useStore()
   const isActive = currentTrack?.id === track.id
   const isLiked = likedIds.has(track.id)
 
   return (
-    <div className={'track-item' + (isActive ? ' active' : '')} onClick={() => play(track)}>
+    <div className={'track-item' + (isActive ? ' active' : '')} onClick={() => play(track, playlist)}>
       <div className="track-item__cover">
         {track.thumbnail_url
           ? <img src={track.thumbnail_url} alt="" />

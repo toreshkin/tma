@@ -36,22 +36,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .track-item__like { background: none; border: none; color: var(--fg2); padding: 8px; cursor: pointer; flex-shrink: 0; }
 .track-item__like.liked { color: var(--accent); }
 
-.mini-player { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--bg2); border-top: 1px solid rgba(255,255,255,.06); overflow: hidden; }
-.mini-player__progress { position: absolute; top: 0; left: 0; height: 2px; background: var(--accent); transition: width .5s linear; }
-.mini-player__cover { width: 40px; height: 40px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: var(--bg); }
-.mini-player__cover img { width: 100%; height: 100%; object-fit: cover; }
-.mini-player__cover-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-.mini-player__meta { flex: 1; min-width: 0; }
-.mini-player__title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mini-player__artist { font-size: 11px; color: var(--fg2); }
-.mini-player__btn { background: none; border: none; color: var(--fg); padding: 6px; cursor: pointer; }
+.player { background: var(--bg2); border-top: 1px solid rgba(255,255,255,.06); }
+.player__seekbar { height: 4px; background: rgba(255,255,255,.1); cursor: pointer; position: relative; }
+.player__seekbar-fill { height: 100%; background: var(--accent); pointer-events: none; }
+.player__body { display: flex; align-items: center; gap: 10px; padding: 8px 12px 10px; }
+.player__cover { width: 42px; height: 42px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: var(--bg); }
+.player__cover img { width: 100%; height: 100%; object-fit: cover; }
+.player__cover-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--fg2); }
+.player__meta { flex: 1; min-width: 0; }
+.player__title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player__artist { font-size: 11px; color: var(--fg2); margin-top: 1px; }
+.player__time { font-size: 10px; color: var(--fg2); margin-top: 2px; }
+.player__controls { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+.player__btn { background: none; border: none; color: var(--fg); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.player__btn:disabled { opacity: 0.3; cursor: default; }
+.player__btn--main { color: var(--accent); padding: 6px 8px; }
 
 .tabbar { display: flex; background: var(--bg2); border-top: 1px solid rgba(255,255,255,.06); }
 .tabbar__btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 12px; background: none; border: none; color: var(--fg2); font-size: 11px; cursor: pointer; transition: color .15s; }
 .tabbar__btn.active { color: var(--accent); }
 
 .search-form { display: flex; gap: 8px; padding: 8px 16px 16px; }
-.search-input { flex: 1; padding: 10px 14px; background: var(--bg2); border: none; border-radius: var(--radius); color: var(--fg); font-size: 14px; outline: none; }
+.search-input { flex: 1; padding: 10px 14px; background: var(--bg2); border: none; border-radius: var(--radius); color: var(--fg); font-size: 16px; outline: none; }
 .search-btn { padding: 10px 16px; background: var(--accent); color: var(--accent-fg); border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; }
 
 .loading-row { padding: 20px 16px; color: var(--fg2); text-align: center; }
