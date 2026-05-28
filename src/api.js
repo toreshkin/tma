@@ -1,4 +1,4 @@
-const BASE = 'https://nota-backend-o90i.onrender.com/api'
+export const BASE = 'https://nota-backend-o90i.onrender.com/api'
 
 let _token = null
 export function setToken(t) { _token = t }

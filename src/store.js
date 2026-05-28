@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { api, setToken } from './api'
+import { api, setToken, BASE } from './api'
 
 export const useStore = create((set, get) => ({
   // auth
@@ -57,20 +57,17 @@ export const useStore = create((set, get) => ({
     set({ isSearching: false })
   },
 
-  play: async (track) => {
-    const { audio } = get()
-    if (audio) { audio.pause(); audio.src = '' }
+  play: (track) => {
+    const { audio: prev } = get()
+    if (prev) { prev.pause(); prev.src = '' }
     set({ currentTrack: track, isPlaying: false, progress: 0, duration: 0 })
-    try {
-      const { stream_url } = await api.getStream(track.id)
-      const a = new Audio(stream_url)
-      a.ontimeupdate = () => set({ progress: a.currentTime, duration: a.duration || 0 })
-      a.onended = () => set({ isPlaying: false })
-      a.play()
-      set({ audio: a, isPlaying: true })
-    } catch (e) {
-      console.error('Stream failed', e)
-    }
+
+    const a = new Audio(`${BASE}/tracks/proxy/${track.id}`)
+    a.ontimeupdate = () => set({ progress: a.currentTime, duration: a.duration || 0 })
+    a.onended = () => set({ isPlaying: false })
+    a.play()
+      .then(() => set({ audio: a, isPlaying: true }))
+      .catch(e => console.error('Stream failed', e))
   },
 
   togglePlay: () => {
