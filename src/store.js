@@ -77,16 +77,48 @@ export const useStore = create((set, get) => ({
         get().play(queue[next])
       } else {
         set({ isPlaying: false })
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'
       }
     }
     a.onerror = () => set({ isPlaying: false, audioError: `Ошибка ${a.error?.code}` })
+
     set({
       currentTrack: track, isPlaying: false, progress: 0, duration: 0,
       audio: a, audioError: null, queue: q, queueIndex: idx < 0 ? 0 : idx,
     })
 
+    // Media Session — метаданные и кнопки на локскрине
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        artwork: track.thumbnail_url
+          ? [{ src: track.thumbnail_url, sizes: '512x512', type: 'image/jpeg' }]
+          : [],
+      })
+      navigator.mediaSession.setActionHandler('play', () => {
+        get().audio?.play().then(() => {
+          set({ isPlaying: true })
+          navigator.mediaSession.playbackState = 'playing'
+        })
+      })
+      navigator.mediaSession.setActionHandler('pause', () => {
+        get().audio?.pause()
+        set({ isPlaying: false })
+        navigator.mediaSession.playbackState = 'paused'
+      })
+      navigator.mediaSession.setActionHandler('previoustrack', () => get().playPrev())
+      navigator.mediaSession.setActionHandler('nexttrack', () => get().playNext())
+      // убираем seekbackward/seekforward чтобы браузер не показывал ±10сек
+      try { navigator.mediaSession.setActionHandler('seekbackward', null) } catch {}
+      try { navigator.mediaSession.setActionHandler('seekforward', null) } catch {}
+    }
+
     a.play()
-      .then(() => set({ isPlaying: true }))
+      .then(() => {
+        set({ isPlaying: true })
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
+      })
       .catch(e => set({ isPlaying: false, audioError: e.message || 'Воспроизведение заблокировано' }))
   },
 
@@ -96,9 +128,13 @@ export const useStore = create((set, get) => ({
     if (isPlaying) {
       audio.pause()
       set({ isPlaying: false })
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused'
     } else {
       audio.play()
-        .then(() => set({ isPlaying: true }))
+        .then(() => {
+          set({ isPlaying: true })
+          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
+        })
         .catch(e => set({ audioError: e.message || 'Воспроизведение заблокировано' }))
     }
   },
