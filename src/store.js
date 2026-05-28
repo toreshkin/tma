@@ -98,7 +98,15 @@ export const useStore = create((set, get) => ({
       }
       if (queue[nextIdx]) get().play(queue[nextIdx], queue)
     }
-    _a.onerror = () => set({ isPlaying: false, audioError: `Ошибка ${_a.error?.code}` })
+    _a.onerror = () => {
+      const code = _a.error?.code
+      // code 4 = MEDIA_ELEMENT_ERROR (track gone / 404) — skip to next
+      if (code === 4 || code === 2) {
+        get().playNext()
+      } else {
+        set({ isPlaying: false, audioError: `Ошибка ${code}` })
+      }
+    }
 
     // track recent plays
     const filtered = recentTracks.filter(t => t.id !== track.id)
