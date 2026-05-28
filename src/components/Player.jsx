@@ -1,7 +1,7 @@
 import { useStore } from '../store'
 
 export default function Player() {
-  const { currentTrack, isPlaying, togglePlay, progress, duration } = useStore()
+  const { currentTrack, isPlaying, togglePlay, progress, duration, audioError } = useStore()
 
   if (!currentTrack) return null
 
@@ -17,7 +17,7 @@ export default function Player() {
       </div>
       <div className="mini-player__meta">
         <div className="mini-player__title">{currentTrack.title}</div>
-        <div className="mini-player__artist">{currentTrack.artist}</div>
+        <div className="mini-player__artist">{audioError ?? currentTrack.artist}</div>
       </div>
       <button className="mini-player__btn" onClick={togglePlay}>
         {isPlaying ? <PauseIcon /> : <PlayIcon />}

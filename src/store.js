@@ -12,6 +12,7 @@ export const useStore = create((set, get) => ({
   audio: null,
   progress: 0,
   duration: 0,
+  audioError: null,
 
   // data
   likedTracks: [],
@@ -64,18 +65,25 @@ export const useStore = create((set, get) => ({
     const a = new Audio(`${BASE}/tracks/proxy/${track.id}`)
     a.ontimeupdate = () => set({ progress: a.currentTime, duration: a.duration || 0 })
     a.onended = () => set({ isPlaying: false })
-    set({ currentTrack: track, isPlaying: false, progress: 0, duration: 0, audio: a })
+    a.onerror = () => set({ isPlaying: false, audioError: `Код ошибки: ${a.error?.code}` })
+    set({ currentTrack: track, isPlaying: false, progress: 0, duration: 0, audio: a, audioError: null })
 
     a.play()
       .then(() => set({ isPlaying: true }))
-      .catch(e => console.error('Stream failed', e))
+      .catch(e => set({ isPlaying: false, audioError: e.message || 'play() заблокирован' }))
   },
 
   togglePlay: () => {
     const { audio, isPlaying } = get()
     if (!audio) return
-    isPlaying ? audio.pause() : audio.play()
-    set({ isPlaying: !isPlaying })
+    if (isPlaying) {
+      audio.pause()
+      set({ isPlaying: false })
+    } else {
+      audio.play()
+        .then(() => set({ isPlaying: true }))
+        .catch(e => set({ audioError: e.message || 'play() заблокирован' }))
+    }
   },
 
   setPage: (page) => set({ page }),
