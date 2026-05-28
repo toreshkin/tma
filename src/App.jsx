@@ -26,7 +26,7 @@ export default function App() {
     return (
       <div className="loading">
         {authError
-          ? <p style={{ color: 'var(--fg2)', textAlign: 'center', padding: '0 24px' }}>{authError}</p>
+          ? <p style={{ color: 'var(--fg-3)', textAlign: 'center', padding: '0 24px' }}>{authError}</p>
           : <>
               <div className="loading__spinner" />
               <p>Подключаемся…</p>

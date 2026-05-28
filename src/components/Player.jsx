@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 import { useStore } from '../store'
+import CoverArt from './CoverArt'
 
 function fmt(s) {
   if (!s || isNaN(s)) return '0:00'
-  const m = Math.floor(s / 60)
-  return `${m}:${Math.floor(s % 60).toString().padStart(2, '0')}`
+  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
 }
 
 export default function Player() {
@@ -33,15 +33,23 @@ export default function Player() {
           <div className="player__cover">
             {currentTrack.thumbnail_url
               ? <img src={currentTrack.thumbnail_url} alt="" />
-              : <div className="player__cover-fallback">{currentTrack.artist?.[0]}</div>}
+              : <CoverArt track={currentTrack} />}
           </div>
           <div className="player__meta">
             <div className="player__title">{currentTrack.title}</div>
             <div className="player__artist">{audioError ?? currentTrack.artist}</div>
           </div>
-          <button className="player__btn player__btn--main" onClick={e => { e.stopPropagation(); togglePlay() }}>
-            {isPlaying ? <PauseIcon size={22} /> : <PlayIcon size={22} />}
-          </button>
+          <div className="player__controls">
+            <button className="player__btn" onClick={e => { e.stopPropagation(); useStore.getState().playPrev() }}>
+              <PrevIcon size={20} />
+            </button>
+            <button className="player__btn player__btn--main" onClick={e => { e.stopPropagation(); togglePlay() }}>
+              {isPlaying ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
+            </button>
+            <button className="player__btn" onClick={e => { e.stopPropagation(); useStore.getState().playNext() }}>
+              <NextIcon size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -76,28 +84,24 @@ function FullPlayer({ onClose }) {
 
   return (
     <div className="fp">
-      {/* Blurred background */}
       {currentTrack.thumbnail_url && (
         <div className="fp__bg" aria-hidden>
           <img src={currentTrack.thumbnail_url} alt="" />
         </div>
       )}
-      {/* Dark veil for readability */}
       <div className="fp__veil" aria-hidden />
 
-      {/* Header */}
       <div className="fp__header">
         <button className="fp__close" onClick={onClose}><ChevronDown /></button>
         <span className="fp__label">Сейчас играет</span>
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Main content */}
       <div className="fp__body">
         <div className="fp__cover">
           {currentTrack.thumbnail_url
             ? <img src={currentTrack.thumbnail_url} alt="" />
-            : <div className="fp__cover-fallback">{currentTrack.artist?.[0]}</div>}
+            : <CoverArt track={currentTrack} />}
         </div>
 
         <div className="fp__info">

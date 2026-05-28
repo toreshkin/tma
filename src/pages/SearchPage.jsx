@@ -18,13 +18,15 @@ export default function SearchPage() {
       </div>
 
       <form className="search-form" onSubmit={handleSubmit}>
-        <input
-          className="search-input"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Артист или название…"
-        />
-        <button className="search-btn" type="submit">Найти</button>
+        <div className="search-bar">
+          <input
+            className="search-bar__input"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Артист или название…"
+          />
+          <button className="search-bar__submit" type="submit">Найти</button>
+        </div>
       </form>
 
       {isSearching && <div className="loading-row">Ищу…</div>}
@@ -38,7 +40,10 @@ export default function SearchPage() {
       )}
 
       {!isSearching && searchQuery && searchResults.length === 0 && (
-        <div className="empty"><p>Ничего не нашлось</p></div>
+        <div className="empty">
+          <div className="empty__icon">🔍</div>
+          <p>Ничего не нашлось</p>
+        </div>
       )}
     </div>
   )
