@@ -100,8 +100,17 @@ export const useStore = create((set, get) => ({
     }
     _a.onerror = () => {
       const code = _a.error?.code
-      // code 4 = MEDIA_ELEMENT_ERROR (track gone / 404) — skip to next
+      // code 4 = MEDIA_ELEMENT_ERROR (track gone / 404) — remove and skip
       if (code === 4 || code === 2) {
+        const { currentTrack: ct, likedIds, likedTracks, recentTracks } = get()
+        if (ct) {
+          const tid = ct.id
+          const nextLiked = likedTracks.filter(t => t.id !== tid)
+          const nextIds = new Set([...likedIds].filter(id => id !== tid))
+          const nextRecent = recentTracks.filter(t => t.id !== tid)
+          set({ likedTracks: nextLiked, likedIds: nextIds, recentTracks: nextRecent })
+          if (likedIds.has(tid)) api.removeLiked(tid).catch(() => {})
+        }
         get().playNext()
       } else {
         set({ isPlaying: false, audioError: `Ошибка ${code}` })
