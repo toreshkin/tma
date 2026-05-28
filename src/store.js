@@ -17,11 +17,12 @@ export const useStore = create((set, get) => ({
   queue: [],
   queueIndex: -1,
   isMuted: false,
-  volume: 1,
+  volume: parseFloat(localStorage.getItem('nota:volume') ?? '1'),
   shuffle: false,
   repeat: 'off', // 'off' | 'all' | 'one'
 
   // data
+  searchHistory: JSON.parse(localStorage.getItem('nota:searchHistory') || '[]'),
   likedTracks: [],
   likedIds: new Set(),
   recentTracks: [],
@@ -57,6 +58,10 @@ export const useStore = create((set, get) => ({
   search: async (q) => {
     if (!q.trim()) return
     set({ isSearching: true, searchQuery: q })
+    const prev = get().searchHistory
+    const next = [q, ...prev.filter(h => h !== q)].slice(0, 6)
+    localStorage.setItem('nota:searchHistory', JSON.stringify(next))
+    set({ searchHistory: next })
     try {
       const data = await api.search(q)
       set({ searchResults: data.tracks ?? [] })
@@ -206,6 +211,7 @@ export const useStore = create((set, get) => ({
 
   setVolume: (v) => {
     _a.volume = v
+    localStorage.setItem('nota:volume', String(v))
     set({ volume: v, isMuted: v === 0 })
   },
 

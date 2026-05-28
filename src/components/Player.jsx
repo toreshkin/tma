@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store'
 import CoverArt from './CoverArt'
+import { fetchLyrics, activeLine, translateLyrics } from '../lyrics'
 
 function fmt(s) {
   if (!s || isNaN(s)) return '0:00'
@@ -43,6 +44,84 @@ function VolumeIcon({ level }) {
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M16 8a5 5 0 0 1 0 8M19.5 5a9 9 0 0 1 0 14"/>
     </svg>
+  )
+}
+
+function LyricsPanel({ track, currentTime }) {
+  const [open, setOpen] = useState(false)
+  const [lyrics, setLyrics] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [trData, setTrData] = useState(null)
+  const [trLoading, setTrLoading] = useState(false)
+  const [showRu, setShowRu] = useState(false)
+  const scrollRef = useRef(null)
+
+  useEffect(() => {
+    if (!track) return
+    setLyrics(null); setTrData(null); setShowRu(false); setLoading(true)
+    fetchLyrics(track.title, track.artist)
+      .then(l => { setLyrics(l); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [track?.id])
+
+  const active = lyrics?.synced ? activeLine(lyrics.synced, currentTime) : -1
+
+  useEffect(() => {
+    if (!open || active < 0 || !scrollRef.current) return
+    const el = scrollRef.current.children[active]
+    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [active, open])
+
+  async function handleTranslate() {
+    if (trData !== null) { setShowRu(v => !v); return }
+    setTrLoading(true); setShowRu(true)
+    try { setTrData(await translateLyrics(lyrics)) }
+    catch { setShowRu(false) }
+    setTrLoading(false)
+  }
+
+  const hasLyrics = lyrics?.synced?.length || lyrics?.plain
+  const lines = hasLyrics
+    ? (lyrics.synced
+        ? lyrics.synced.map((l, i) => ({
+            key: i, empty: !l.text, isActive: i === active,
+            text: showRu && Array.isArray(trData) ? (trData[i]?.textRu || l.text) : l.text,
+          }))
+        : (showRu && typeof trData === 'string' ? trData : lyrics.plain)
+            .split('\n').map((text, i) => ({ key: i, text, empty: !text.trim(), isActive: false }))
+      )
+    : []
+
+  return (
+    <div className="m-lyrics">
+      <button className="m-lyrics__head" onClick={() => hasLyrics && setOpen(v => !v)}>
+        <span className="m-lyrics__head-label">
+          {loading ? 'Загрузка текста…' : hasLyrics ? 'Текст песни' : 'Текст не найден'}
+        </span>
+        {hasLyrics && (
+          <span className={'m-lyrics__chev' + (open ? ' is-open' : '')}>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 6l6 6-6 6"/></svg>
+          </span>
+        )}
+      </button>
+
+      {open && hasLyrics && (
+        <>
+          <div className="m-lyrics__bar">
+            <button className={'m-lyrics__tr' + (showRu ? ' is-on' : '')}
+                    onClick={handleTranslate} disabled={trLoading}>
+              {trLoading ? '…' : showRu ? 'Оригинал' : 'Перевод на RU'}
+            </button>
+          </div>
+          <div className="m-lyrics__scroll" ref={scrollRef}>
+            {lines.map(l => l.empty
+              ? <div key={l.key} className="m-lyrics__gap" />
+              : <div key={l.key} className={'m-lyrics__line' + (l.isActive ? ' is-active' : '')}>{l.text}</div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -231,6 +310,8 @@ function NowPlaying({ open, onClose }) {
             <span className="m-np__chip">SoundCloud</span>
           </div>
         )}
+
+        <LyricsPanel track={currentTrack} currentTime={progress} />
       </div>
     </div>
   )

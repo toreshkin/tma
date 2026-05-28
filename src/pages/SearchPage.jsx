@@ -28,9 +28,18 @@ function XIcon() {
   )
 }
 
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+         strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
+    </svg>
+  )
+}
+
 export default function SearchPage() {
   const [input, setInput] = useState('')
-  const { search, searchResults, isSearching, searchQuery } = useStore()
+  const { search, searchResults, isSearching, searchQuery, searchHistory } = useStore()
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -62,6 +71,19 @@ export default function SearchPage() {
           <button type="submit" className="m-search__submit">Найти</button>
         </form>
       </div>
+
+      {!input && searchHistory.length > 0 && (
+        <div className="m-history">
+          <div className="m-history__label">Недавнее</div>
+          <div className="m-chips">
+            {searchHistory.map(h => (
+              <button key={h} className="m-chip m-chip--history" onClick={() => handleChip(h)}>
+                <ClockIcon /> {h}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="m-chips">
         {QUICK_CHIPS.map(c => (
