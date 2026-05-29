@@ -134,7 +134,7 @@ function Cover({ track, style }) {
 
 export default function Player() {
   const [npOpen, setNpOpen] = useState(false)
-  const { currentTrack, isPlaying, togglePlay, progress, duration, likedIds, toggleLike } = useStore()
+  const { currentTrack, isPlaying, togglePlay, progress, duration, likedIds, toggleLike, openArtistCard } = useStore()
 
   if (!currentTrack) return null
 
@@ -152,7 +152,11 @@ export default function Player() {
         </div>
         <div className="m-bar__meta" onClick={() => setNpOpen(true)}>
           <div className="m-bar__title">{currentTrack.title}</div>
-          <div className="m-bar__artist">{currentTrack.artist}</div>
+          <div className="m-bar__artist">
+            <span className="m-artist-link" onClick={e => { e.stopPropagation(); openArtistCard(currentTrack.artist) }}>
+              {currentTrack.artist}
+            </span>
+          </div>
         </div>
         <div className="m-bar__btns">
           <button className={'m-bar__like' + (isLiked ? ' is-liked' : '')}
@@ -181,6 +185,7 @@ function NowPlaying({ open, onClose }) {
     repeat, cycleRepeat,
     audioError,
     volume, setVolume, isMuted, toggleMute,
+    openArtistCard,
   } = useStore()
 
   const scrubRef = useRef(null)
@@ -242,7 +247,13 @@ function NowPlaying({ open, onClose }) {
         <div className="m-np__meta">
           <div className="m-np__meta-text">
             <div className="m-np__title">{currentTrack.title}</div>
-            <div className="m-np__artist">{audioError ?? currentTrack.artist}</div>
+            <div className="m-np__artist">
+              {audioError ?? (
+                <span className="m-artist-link" onClick={() => openArtistCard(currentTrack.artist)}>
+                  {currentTrack.artist}
+                </span>
+              )}
+            </div>
           </div>
           <button className={'m-np__like' + (isLiked ? ' is-liked' : '')}
                   onClick={() => toggleLike(currentTrack)} aria-label="Лайк">

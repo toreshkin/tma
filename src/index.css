@@ -403,6 +403,79 @@ input  { font: inherit; color: inherit; background: none; border: none; outline:
 }
 .m-liked-actions { display: flex; gap: 10px; margin-top: 4px; }
 
+/* ─── ARTIST LINK ───────────────────────────── */
+.m-artist-link, .m-track__artist-link {
+  cursor: pointer; transition: color .15s;
+}
+.m-artist-link:hover, .m-track__artist-link:hover { color: var(--accent); }
+
+/* ─── ARTIST CARD SHEET ─────────────────────── */
+.m-artist-sheet {
+  position: absolute; inset: 0; z-index: 100;
+  pointer-events: none;
+}
+.m-artist-sheet.is-open { pointer-events: all; }
+.m-artist-sheet__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.55);
+  opacity: 0; transition: opacity .3s;
+}
+.m-artist-sheet.is-open .m-artist-sheet__backdrop { opacity: 1; }
+.m-artist-sheet__panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--bg-1);
+  border-radius: 20px 20px 0 0;
+  max-height: 82vh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .35s var(--ease-out);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+}
+.m-artist-sheet.is-open .m-artist-sheet__panel { transform: translateY(0); }
+.m-artist-sheet__handle-bar {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border); margin: 12px auto 20px;
+}
+.m-artist-sheet__loading {
+  display: flex; justify-content: center; align-items: center;
+  padding: 48px 0;
+}
+.m-artist-sheet__header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 20px 20px;
+}
+.m-artist-sheet__avatar {
+  width: 72px; height: 72px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--bg-2);
+}
+.m-artist-sheet__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.m-artist-sheet__avatar-fallback {
+  width: 100%; height: 100%; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 28px; font-weight: 700;
+  color: var(--fg-3);
+}
+.m-artist-sheet__name {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em; color: var(--fg-1);
+}
+.m-artist-sheet__stats {
+  display: flex; gap: 12px; margin-top: 4px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-3);
+}
+.m-artist-sheet__actions { padding: 0 20px 16px; }
+.m-artist-wave-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 13px 18px;
+  background: linear-gradient(135deg, rgba(0,184,148,.18), rgba(0,206,201,.06));
+  border: 1px solid rgba(0,184,148,.3);
+  border-radius: var(--radius-lg);
+  color: var(--fg-1); cursor: pointer;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  transition: border-color .15s, transform .12s;
+}
+.m-artist-wave-btn svg { color: #00b894; flex-shrink: 0; }
+.m-artist-wave-btn:active { transform: scale(0.98); border-color: rgba(0,184,148,.6); }
+.m-artist-sheet__tracks { padding: 0 0 8px; }
+
 /* ─── EMPTY ──────────────────────────────────── */
 .m-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;

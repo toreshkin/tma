@@ -17,7 +17,7 @@ function HeartIcon({ filled }) {
 }
 
 export default function TrackItem({ track, showLike = true, playlist = null }) {
-  const { play, currentTrack, isPlaying, toggleLike, likedIds } = useStore()
+  const { play, currentTrack, isPlaying, toggleLike, likedIds, openArtistCard } = useStore()
   const isActive = currentTrack?.id === track.id
   const isLiked = likedIds.has(track.id)
 
@@ -38,7 +38,7 @@ export default function TrackItem({ track, showLike = true, playlist = null }) {
       <div className="m-track__meta">
         <div className="m-track__title">{track.title}</div>
         <div className="m-track__sub">
-          <span>{track.artist}</span>
+          <span className="m-track__artist-link" onClick={e => { e.stopPropagation(); openArtistCard(track.artist) }}>{track.artist}</span>
           {track.duration_seconds ? (
             <>
               <span className="m-track__sub-dot" />

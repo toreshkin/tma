@@ -5,6 +5,7 @@ import SearchPage from './pages/SearchPage'
 import HomePage from './pages/HomePage'
 import Player from './components/Player'
 import TabBar from './components/TabBar'
+import ArtistCard from './components/ArtistCard'
 
 const tg = window.Telegram?.WebApp
 
@@ -97,6 +98,7 @@ export default function App() {
       </main>
       <Player />
       <TabBar />
+      <ArtistCard />
     </div>
   )
 }

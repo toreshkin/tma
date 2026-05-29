@@ -35,6 +35,9 @@ export const useStore = create((set, get) => ({
   searchResults: [],
   searchQuery: '',
   isSearching: false,
+  artistCardOpen: false,
+  artistCardLoading: false,
+  artistCard: null,
 
   init: async (initData) => {
     const { access_token, user } = await api.authTelegram(initData)
@@ -258,6 +261,37 @@ export const useStore = create((set, get) => ({
   },
 
   setPage: (page) => set({ page }),
+
+  openArtistCard: async (artistName) => {
+    set({ artistCardOpen: true, artistCardLoading: true, artistCard: null })
+    try {
+      const card = await api.getArtistCard(artistName)
+      set({ artistCard: card, artistCardLoading: false })
+    } catch {
+      set({ artistCardOpen: false, artistCardLoading: false })
+    }
+  },
+
+  closeArtistCard: () => set({ artistCardOpen: false, artistCard: null, artistCardLoading: false }),
+
+  startArtistWave: async (artistCard) => {
+    const tracks = artistCard.tracks
+    if (!tracks.length) return
+    const seed = tracks[Math.floor(Math.random() * Math.min(5, tracks.length))]
+    set({ artistCardOpen: false, artistCard: null })
+    try {
+      const data = await api.getRelated(seed.id)
+      const related = data.tracks ?? []
+      if (!related.length) throw new Error('empty')
+      const seen = new Set([seed.id, ...related.map(t => t.id)])
+      set({ isWaveMode: true, _waveSeenIds: seen })
+      get().play(related[0], related, true)
+    } catch {
+      set({ isWaveMode: false })
+      const shuffled = [...tracks].sort(() => Math.random() - 0.5)
+      get().play(shuffled[0], shuffled)
+    }
+  },
 
   startWave: async () => {
     const { likedTracks, recentTracks, play } = get()

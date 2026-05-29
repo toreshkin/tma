@@ -34,6 +34,9 @@ export const api = {
   getRelated: (trackId, limit = 20) =>
     req(`/tracks/related/${trackId}?limit=${limit}`),
 
+  getArtistCard: (name, trackLimit = 20) =>
+    req(`/artists/card?name=${encodeURIComponent(name)}&track_limit=${trackLimit}`),
+
   getStream: (videoId) =>
     Promise.resolve({ stream_url: `${BASE}/tracks/proxy/${videoId}` }),
 
