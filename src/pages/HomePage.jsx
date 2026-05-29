@@ -1,6 +1,7 @@
 import { useStore } from '../store'
 import TrackItem from '../components/TrackItem'
 import CoverArt from '../components/CoverArt'
+import { useState } from 'react'
 
 const QUICK_CHIPS = ['Saluki', 'Скриптонит', 'MACAN', 'Miyagi', 'The Weeknd', 'Travis Scott', 'Imagine Dragons', 'Мот']
 
@@ -20,9 +21,18 @@ function ChevronRight() {
 function SearchIcon() {
   return <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
 }
+function WaveIcon() {
+  return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12c1.5-3 3-4.5 4.5-4.5S9 9 10.5 9s3-3 4.5-3S18 9 19.5 9 21 7.5 22 7.5"/><path d="M2 17c1.5-1.5 3-2.5 4.5-2.5S9 16 10.5 16s3-2 4.5-2 3 2.5 4.5 2.5S21 15 22 15"/></svg>
+}
 
 export default function HomePage() {
-  const { likedTracks, recentTracks, play, setPage, search, currentTrack, isPlaying, likedIds } = useStore()
+  const { likedTracks, recentTracks, play, setPage, search, currentTrack, isPlaying, likedIds, startWave, isWaveMode } = useStore()
+  const [waveLoading, setWaveLoading] = useState(false)
+
+  async function handleStartWave() {
+    setWaveLoading(true)
+    try { await startWave() } finally { setWaveLoading(false) }
+  }
 
   function playMyMusic() {
     const pool = likedTracks.length ? likedTracks
@@ -46,7 +56,7 @@ export default function HomePage() {
         <p className="m-hero__sub">Миллионы треков. Введи название — Nota найдёт за секунды.</p>
       </section>
 
-      <div style={{ padding: '0 18px', marginBottom: 14 }}>
+      <div style={{ padding: '0 18px', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <button className="m-my-cta" onClick={playMyMusic}>
           <span className="m-my-cta__icon"><PlayIcon /></span>
           <span className="m-my-cta__text">
@@ -58,6 +68,14 @@ export default function HomePage() {
                   ? <>Из недавнего · <strong>{recentTracks.length}</strong> {pluralize(recentTracks.length, ['трек', 'трека', 'треков'])}</>
                   : <>Подборка для тебя</>}
             </span>
+          </span>
+          <span className="m-my-cta__chev"><ChevronRight /></span>
+        </button>
+        <button className={`m-my-cta m-my-cta--wave${isWaveMode ? ' m-my-cta--wave-active' : ''}`} onClick={handleStartWave} disabled={waveLoading}>
+          <span className="m-my-cta__icon"><WaveIcon /></span>
+          <span className="m-my-cta__text">
+            <span className="m-my-cta__title">{waveLoading ? 'Подбираем…' : 'Моя волна'}</span>
+            <span className="m-my-cta__sub">{isWaveMode ? 'Сейчас играет · бесконечный поток' : 'Бесконечный поток похожей музыки'}</span>
           </span>
           <span className="m-my-cta__chev"><ChevronRight /></span>
         </button>

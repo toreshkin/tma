@@ -229,6 +229,14 @@ input  { font: inherit; color: inherit; background: none; border: none; outline:
 .m-my-cta__sub { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); letter-spacing: 0.02em; }
 .m-my-cta__sub strong { color: var(--fg-1); font-weight: 600; }
 .m-my-cta__chev { flex-shrink: 0; color: var(--fg-3); position: relative; }
+.m-my-cta--wave .m-my-cta__icon {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  box-shadow: 0 0 24px rgba(0, 184, 148, 0.5), 0 4px 10px rgba(0,0,0,0.35);
+}
+.m-my-cta--wave::before {
+  background: radial-gradient(circle at 12% 50%, rgba(0, 184, 148, 0.18), transparent 55%);
+}
+.m-my-cta--wave-active .m-my-cta__title { color: #00b894; }
 
 .m-chips {
   display: flex; gap: 8px; padding: 16px 18px 4px;

@@ -31,6 +31,9 @@ export const api = {
   search: (q, limit = 20) =>
     req(`/tracks/search?q=${encodeURIComponent(q)}&limit=${limit}`),
 
+  getRelated: (trackId, limit = 20) =>
+    req(`/tracks/related/${trackId}?limit=${limit}`),
+
   getStream: (videoId) =>
     Promise.resolve({ stream_url: `${BASE}/tracks/proxy/${videoId}` }),
 

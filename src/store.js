@@ -20,6 +20,8 @@ export const useStore = create((set, get) => ({
   volume: parseFloat(localStorage.getItem('nota:volume') ?? '1'),
   shuffle: false,
   repeat: 'off', // 'off' | 'all' | 'one'
+  isWaveMode: false,
+  _waveSeenIds: new Set(),
 
   // data
   searchHistory: JSON.parse(localStorage.getItem('nota:searchHistory') || '[]'),
@@ -69,7 +71,7 @@ export const useStore = create((set, get) => ({
     set({ isSearching: false })
   },
 
-  play: (track, newQueue = null) => {
+  play: (track, newQueue = null, _fromWave = false) => {
     const { queue: curQueue, isMuted, volume, recentTracks } = get()
 
     _a.pause()
@@ -101,7 +103,7 @@ export const useStore = create((set, get) => ({
           }
         }
       }
-      if (queue[nextIdx]) get().play(queue[nextIdx], queue)
+      if (queue[nextIdx]) get().play(queue[nextIdx], queue, get().isWaveMode)
     }
     _a.onerror = () => {
       const code = _a.error?.code
@@ -130,6 +132,7 @@ export const useStore = create((set, get) => ({
       currentTrack: track, isPlaying: false, progress: 0, duration: 0,
       audioError: null, queue: q, queueIndex: idx < 0 ? 0 : idx,
       recentTracks: nextRecent,
+      isWaveMode: _fromWave ? get().isWaveMode : false,
     })
 
     if ('mediaSession' in navigator) {
@@ -178,7 +181,7 @@ export const useStore = create((set, get) => ({
   },
 
   playNext: () => {
-    const { queue, queueIndex, shuffle, repeat } = get()
+    const { queue, queueIndex, shuffle, repeat, isWaveMode } = get()
     if (!queue.length) return
     let nextIdx
     if (shuffle) {
@@ -187,10 +190,18 @@ export const useStore = create((set, get) => ({
       nextIdx = queueIndex + 1
       if (nextIdx >= queue.length) {
         if (repeat === 'all') nextIdx = 0
-        else { set({ isPlaying: false }); return }
+        else if (isWaveMode) {
+          // очередь кончилась в режиме волны — дозагружаем и ждём
+          get()._refillWave()
+          return
+        } else {
+          set({ isPlaying: false })
+          return
+        }
       }
     }
-    if (queue[nextIdx]) get().play(queue[nextIdx], queue)
+    if (isWaveMode && nextIdx >= queue.length - 2) get()._refillWave()
+    if (queue[nextIdx]) get().play(queue[nextIdx], queue, isWaveMode)
   },
 
   playPrev: () => {
@@ -232,4 +243,37 @@ export const useStore = create((set, get) => ({
   },
 
   setPage: (page) => set({ page }),
+
+  startWave: async () => {
+    const { likedTracks, recentTracks, play } = get()
+    const pool = likedTracks.length ? likedTracks : recentTracks
+    if (!pool.length) { get().setPage('search'); return }
+
+    const seed = pool[Math.floor(Math.random() * pool.length)]
+    try {
+      const data = await api.getRelated(seed.id)
+      const tracks = data.tracks ?? []
+      if (!tracks.length) throw new Error('empty')
+      const seen = new Set([seed.id, ...tracks.map(t => t.id)])
+      set({ isWaveMode: true, _waveSeenIds: seen })
+      play(tracks[0], tracks, true)
+    } catch {
+      set({ isWaveMode: false })
+      const shuffled = [...pool].sort(() => Math.random() - 0.5)
+      play(shuffled[0], shuffled)
+    }
+  },
+
+  _refillWave: async () => {
+    const { queue, isWaveMode, _waveSeenIds } = get()
+    if (!isWaveMode || !queue.length) return
+    const lastTrack = queue[queue.length - 1]
+    try {
+      const data = await api.getRelated(lastTrack.id)
+      const fresh = (data.tracks ?? []).filter(t => !_waveSeenIds.has(t.id))
+      if (!fresh.length) return
+      const nextSeen = new Set([..._waveSeenIds, ...fresh.map(t => t.id)])
+      set(s => ({ queue: [...s.queue, ...fresh], _waveSeenIds: nextSeen }))
+    } catch {}
+  },
 }))
