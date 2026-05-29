@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { api, setToken, BASE } from './api'
 
 const _a = new Audio()
+let _playId = 0
 
 export const useStore = create((set, get) => ({
   // auth
@@ -73,6 +74,7 @@ export const useStore = create((set, get) => ({
 
   play: (track, newQueue = null, _fromWave = false) => {
     const { queue: curQueue, isMuted, volume, recentTracks } = get()
+    const myId = ++_playId
 
     _a.pause()
     _a.src = `${BASE}/tracks/proxy/${track.id}`
@@ -81,8 +83,12 @@ export const useStore = create((set, get) => ({
     const q = newQueue ?? (curQueue.length ? curQueue : [track])
     const idx = q.findIndex(t => t.id === track.id)
 
-    _a.ontimeupdate = () => set({ progress: _a.currentTime, duration: _a.duration || 0 })
+    _a.ontimeupdate = () => {
+      if (_playId !== myId) return
+      set({ progress: _a.currentTime, duration: _a.duration || 0 })
+    }
     _a.onended = () => {
+      if (_playId !== myId) return
       const { queue, queueIndex, shuffle, repeat } = get()
       if (repeat === 'one') {
         _a.currentTime = 0
@@ -106,7 +112,10 @@ export const useStore = create((set, get) => ({
       if (queue[nextIdx]) get().play(queue[nextIdx], queue, get().isWaveMode)
     }
     _a.onerror = () => {
+      if (_playId !== myId) return
       const code = _a.error?.code
+      // code 1 = MEDIA_ERR_ABORTED — ожидаемо при быстром переключении, игнорируем
+      if (code === 1) return
       // code 4 = MEDIA_ELEMENT_ERROR (track gone / 404) — remove and skip
       if (code === 4 || code === 2) {
         const { currentTrack: ct, likedIds, likedTracks, recentTracks } = get()
@@ -157,10 +166,16 @@ export const useStore = create((set, get) => ({
 
     _a.play()
       .then(() => {
+        if (_playId !== myId) return
         set({ isPlaying: true })
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing'
       })
-      .catch(e => set({ isPlaying: false, audioError: e.message || 'Воспроизведение заблокировано' }))
+      .catch(e => {
+        if (_playId !== myId) return
+        // AbortError — нормально при быстром переключении, не показываем ошибку
+        if (e?.name === 'AbortError') return
+        set({ isPlaying: false, audioError: e.message || 'Воспроизведение заблокировано' })
+      })
   },
 
   togglePlay: () => {
