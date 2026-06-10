@@ -48,6 +48,86 @@ export const useStore = create((set, get) => ({
     set({ likedTracks: tracks, likedIds: new Set(tracks.map(t => t.id)) })
   },
 
+  // PWA вне Telegram: восстановление сессии из localStorage.
+  // Возвращает false, если сессии нет или токен протух (401).
+  restoreSession: async () => {
+    let saved = null
+    try { saved = JSON.parse(localStorage.getItem('nota:auth') || 'null') } catch { /* битый JSON */ }
+    if (!saved?.token || !saved?.user) return false
+    setToken(saved.token)
+    set({ user: saved.user, token: saved.token })
+    try {
+      const data = await api.getLiked()
+      const tracks = data.tracks ?? []
+      set({ likedTracks: tracks, likedIds: new Set(tracks.map(t => t.id)) })
+    } catch (e) {
+      // сетевая ошибка — оставляем сессию, токен мог быть валиден
+      if (e instanceof TypeError) return true
+      localStorage.removeItem('nota:auth')
+      setToken(null)
+      set({ user: null, token: null })
+      return false
+    }
+    return true
+  },
+
+  // PWA вне Telegram: вход через Telegram Login Widget в попапе.
+  // Результат приходит либо postMessage'ем из попапа, либо поллингом
+  // /auth/poll/{nonce} (iOS standalone теряет window.opener).
+  loginWithWidget: () => new Promise((resolve, reject) => {
+    const nonce = crypto.randomUUID()
+    const backendOrigin = new URL(BASE).origin
+    const popup = window.open(
+      `${BASE}/auth/login?nonce=${nonce}`,
+      'nota-login',
+      'width=420,height=560',
+    )
+    let done = false
+
+    const finish = async ({ token, user }) => {
+      if (done) return
+      done = true
+      cleanup()
+      setToken(token)
+      localStorage.setItem('nota:auth', JSON.stringify({ token, user }))
+      set({ user, token })
+      try {
+        const data = await api.getLiked()
+        const tracks = data.tracks ?? []
+        set({ likedTracks: tracks, likedIds: new Set(tracks.map(t => t.id)) })
+      } catch { /* лайки подтянутся позже */ }
+      resolve()
+    }
+
+    const onMsg = (e) => {
+      if (e.origin !== backendOrigin) return
+      const r = e.data?.tgAuthResult
+      if (r?.token) finish({ token: r.token, user: r.user })
+    }
+    window.addEventListener('message', onMsg)
+
+    const iv = setInterval(async () => {
+      try {
+        const r = await api.pollAuth(nonce)
+        if (r?.status === 'ok') finish({ token: r.token, user: r.user })
+      } catch { /* поллим дальше */ }
+    }, 2000)
+
+    const to = setTimeout(() => {
+      if (done) return
+      done = true
+      cleanup()
+      reject(new Error('Время входа истекло, попробуй ещё раз'))
+    }, 180000)
+
+    function cleanup() {
+      window.removeEventListener('message', onMsg)
+      clearInterval(iv)
+      clearTimeout(to)
+      try { popup?.close() } catch { /* popup мог закрыться сам */ }
+    }
+  }),
+
   toggleLike: async (track) => {
     const { likedIds, likedTracks } = get()
     if (likedIds.has(track.id)) {

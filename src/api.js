@@ -28,6 +28,8 @@ export const api = {
       return r.json()
     }),
 
+  pollAuth: (nonce) => req(`/auth/poll/${nonce}`),
+
   search: (q, limit = 20) =>
     req(`/tracks/search?q=${encodeURIComponent(q)}&limit=${limit}`),
 

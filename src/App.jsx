@@ -58,23 +58,53 @@ function AppHeader() {
   )
 }
 
+function LoginScreen() {
+  const { loginWithWidget } = useStore()
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const onLogin = () => {
+    setBusy(true)
+    setError(null)
+    loginWithWidget()
+      .catch(e => { setError(e?.message ?? 'Ошибка входа'); setBusy(false) })
+  }
+
+  return (
+    <div className="m-login">
+      <div className="m-login__brand">
+        <span className="m-header__mark"><NoteIcon /></span>
+        <span className="m-login__word">Nota</span>
+      </div>
+      <p className="m-login__hint">Музыка без границ</p>
+      <button className="m-login__btn" onClick={onLogin} disabled={busy}>
+        {busy ? 'Ждём подтверждения…' : 'Войти через Telegram'}
+      </button>
+      {error && <p className="m-login__error">{error}</p>}
+    </div>
+  )
+}
+
 export default function App() {
-  const { init, user, page, currentTrack } = useStore()
+  const { init, restoreSession, user, page, currentTrack } = useStore()
   const [authError, setAuthError] = useState(null)
+  const [needsLogin, setNeedsLogin] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'dark')
-    tg?.ready()
-    tg?.expand()
     const initData = tg?.initData
     if (initData) {
+      tg.ready()
+      tg.expand()
       init(initData).catch(e => setAuthError(e?.message ?? 'Ошибка авторизации'))
     } else {
-      setAuthError('Открой приложение через Telegram')
+      // открыто вне Telegram (PWA / браузер) — пробуем сохранённую сессию
+      restoreSession().then(ok => { if (!ok) setNeedsLogin(true) })
     }
   }, [])
 
   if (!user) {
+    if (needsLogin) return <LoginScreen />
     return (
       <div className="loading">
         {authError
