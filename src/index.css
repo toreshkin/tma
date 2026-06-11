@@ -810,3 +810,41 @@ input  { font: inherit; color: inherit; background: none; border: none; outline:
   color: var(--fg-4, #56565e);
   user-select: none;
 }
+
+/* ── Очередь в полноэкранном плеере ───────────────────────────────── */
+.m-queue {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.m-queue__list {
+  max-height: 240px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 2px;
+  padding-right: 4px; padding-bottom: 8px;
+}
+.m-queue__list::-webkit-scrollbar { width: 2px; }
+.m-queue__list::-webkit-scrollbar-thumb {
+  background: var(--border-strong); border-radius: 2px;
+}
+.m-queue__row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 4px; border-radius: 8px; cursor: pointer;
+}
+.m-queue__row:active { background: rgba(255, 255, 255, 0.06); }
+.m-queue__cover {
+  width: 36px; height: 36px; border-radius: 6px;
+  overflow: hidden; flex-shrink: 0;
+}
+.m-queue__meta { flex: 1; min-width: 0; }
+.m-queue__title {
+  font-size: 13px; color: var(--fg-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-queue__artist {
+  font-size: 11px; color: var(--fg-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-queue__dur {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--fg-4); flex-shrink: 0;
+}

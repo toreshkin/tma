@@ -122,6 +122,41 @@ function LyricsPanel({ track, currentTime }) {
   )
 }
 
+function QueuePanel() {
+  const { queue, queueIndex, play, isWaveMode } = useStore()
+  const [open, setOpen] = useState(false)
+  const upcoming = queue.slice(queueIndex + 1)
+  if (!upcoming.length) return null
+
+  return (
+    <div className="m-queue">
+      <button className="m-lyrics__head" onClick={() => setOpen(v => !v)}>
+        <span className="m-lyrics__head-label">
+          Дальше в очереди · {upcoming.length}{isWaveMode ? ' · волна' : ''}
+        </span>
+        <span className={'m-lyrics__chev' + (open ? ' is-open' : '')}>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+      {open && (
+        <div className="m-queue__list">
+          {upcoming.slice(0, 50).map((t, i) => (
+            <div key={`${t.id}:${i}`} className="m-queue__row"
+                 onClick={() => play(t, queue, isWaveMode)}>
+              <div className="m-queue__cover"><Cover track={t} /></div>
+              <div className="m-queue__meta">
+                <div className="m-queue__title">{t.title}</div>
+                <div className="m-queue__artist">{t.artist}</div>
+              </div>
+              <span className="m-queue__dur">{t.duration_seconds ? fmt(t.duration_seconds) : ''}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Cover({ track, style }) {
   if (track.thumbnail_url) {
     return <img src={track.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', ...style }} />
@@ -334,6 +369,8 @@ function NowPlaying({ open, onClose }) {
             <span className="m-np__chip">SoundCloud</span>
           </div>
         )}
+
+        <QueuePanel />
 
         <LyricsPanel track={currentTrack} currentTime={progress} />
       </div>
