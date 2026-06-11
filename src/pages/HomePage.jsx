@@ -140,6 +140,8 @@ export default function HomePage() {
           </button>
         </div>
       )}
+
+      <div className="m-version">Nota v{__APP_VERSION__}</div>
     </>
   )
 }

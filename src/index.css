@@ -800,3 +800,13 @@ input  { font: inherit; color: inherit; background: none; border: none; outline:
 .m-login__btn:active { transform: scale(0.97); }
 .m-login__btn:disabled { opacity: 0.6; }
 .m-login__error { color: #ff6b6b; font-size: 13px; text-align: center; }
+
+/* ── Версия приложения внизу главной ─────────────────────────────── */
+.m-version {
+  padding: 18px 0 10px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--fg-4, #56565e);
+  user-select: none;
+}
