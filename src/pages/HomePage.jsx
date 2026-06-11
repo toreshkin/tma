@@ -26,7 +26,7 @@ function WaveIcon() {
 }
 
 export default function HomePage() {
-  const { likedTracks, recentTracks, play, setPage, search, currentTrack, isPlaying, likedIds, startWave, isWaveMode } = useStore()
+  const { likedTracks, recentTracks, play, setPage, search, startWave, isWaveMode } = useStore()
   const [waveLoading, setWaveLoading] = useState(false)
 
   async function handleStartWave() {

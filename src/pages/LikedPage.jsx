@@ -8,11 +8,6 @@ function pluralize(n, [one, few, many]) {
   return many
 }
 
-function fmt(s) {
-  if (!s || isNaN(s)) return ''
-  return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
-}
-
 function HeartFilledIcon() {
   return (
     <svg viewBox="0 0 24 24" width="62" height="62" fill="currentColor"

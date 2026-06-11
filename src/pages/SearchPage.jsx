@@ -39,7 +39,7 @@ function ClockIcon() {
 
 export default function SearchPage() {
   const [input, setInput] = useState('')
-  const { search, searchResults, isSearching, searchQuery, searchHistory } = useStore()
+  const { search, searchResults, isSearching, searchQuery, searchHistory, searchError } = useStore()
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -94,9 +94,11 @@ export default function SearchPage() {
       <div className="m-results-meta">
         {isSearching
           ? 'Ищу на SoundCloud…'
-          : searchQuery
-            ? <>{searchResults.length} {pluralize(searchResults.length, ['результат', 'результата', 'результатов'])} для «<em>{searchQuery}</em>»</>
-            : 'Введи название трека или артиста'}
+          : searchError
+            ? <span style={{ color: 'var(--fg-3, #f87171)' }}>{searchError}</span>
+            : searchQuery
+              ? <>{searchResults.length} {pluralize(searchResults.length, ['результат', 'результата', 'результатов'])} для «<em>{searchQuery}</em>»</>
+              : 'Введи название трека или артиста'}
       </div>
 
       <div className="m-list">
@@ -105,7 +107,7 @@ export default function SearchPage() {
           : searchResults.map(track => (
               <TrackItem key={track.id} track={track} showLike playlist={searchResults} />
             ))}
-        {!isSearching && searchQuery && searchResults.length === 0 && (
+        {!isSearching && !searchError && searchQuery && searchResults.length === 0 && (
           <div className="m-empty" style={{ minHeight: 'auto', padding: '30px 24px' }}>
             <div className="m-empty__icon" style={{ width: 64, height: 64 }}>
               <SearchBarIcon />

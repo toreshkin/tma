@@ -8,17 +8,14 @@ function fmt(s) {
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
 }
 
+// iOS игнорирует audio.volume — слайдер там бесполезен, прячем
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+
 function PlayIcon({ size = 16 }) {
   return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></svg>
 }
 function PauseIcon({ size = 16 }) {
   return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" stroke="none"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>
-}
-function PrevIcon({ size = 22 }) {
-  return <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 5v14M19 5l-9 7 9 7z" fill="currentColor" stroke="none"/><line x1="6" y1="5" x2="6" y2="19" stroke="currentColor" strokeWidth="2"/></svg>
-}
-function NextIcon({ size = 22 }) {
-  return <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M18 5v14M5 5l9 7-9 7z" fill="currentColor" stroke="none"/><line x1="18" y1="5" x2="18" y2="19" stroke="currentColor" strokeWidth="2"/></svg>
 }
 function ShuffleIcon() {
   return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h5v5M21 4l-9 9M4 4h2.5l3 4.5M21 16v4h-5M21 20l-9-9M4 20h2.5l3-4"/></svg>
@@ -189,13 +186,15 @@ function NowPlaying({ open, onClose }) {
   } = useStore()
 
   const scrubRef = useRef(null)
-  const dragging = useRef(false)
   const volRef = useRef(null)
   const volDragging = useRef(false)
+  // во время драга двигаем только визуал; реальный seek — на отпускании,
+  // иначе каждое движение пальца дёргает буферизацию
+  const [dragPct, setDragPct] = useState(null)
 
   if (!currentTrack) return null
 
-  const pct = duration ? (progress / duration) * 100 : 0
+  const pct = dragPct ?? (duration ? (progress / duration) * 100 : 0)
   const isLiked = likedIds.has(currentTrack.id)
 
   function volAt(clientX) {
@@ -207,14 +206,27 @@ function NowPlaying({ open, onClose }) {
   function onVolPM(e) { if (volDragging.current) volAt(e.clientX) }
   function onVolPU()  { volDragging.current = false }
 
-  function scrubAt(clientX) {
+  function scrubRatio(clientX) {
     const rect = scrubRef.current?.getBoundingClientRect()
-    if (!rect || !duration) return
-    seek(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * duration)
+    if (!rect) return null
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }
-  function onPD(e) { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); scrubAt(e.clientX) }
-  function onPM(e) { if (dragging.current) scrubAt(e.clientX) }
-  function onPU()  { dragging.current = false }
+  function onPD(e) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const r = scrubRatio(e.clientX)
+    if (r !== null) setDragPct(r * 100)
+  }
+  function onPM(e) {
+    if (dragPct === null) return
+    const r = scrubRatio(e.clientX)
+    if (r !== null) setDragPct(r * 100)
+  }
+  function onPU(e) {
+    if (dragPct === null) return
+    const r = scrubRatio(e.clientX)
+    if (r !== null && duration) seek(r * duration)
+    setDragPct(null)
+  }
 
   return (
     <div className={'m-np' + (open ? ' is-open' : '') + (isPlaying ? ' is-playing' : '')}>
@@ -263,7 +275,8 @@ function NowPlaying({ open, onClose }) {
 
         <div className="m-scrub">
           <div className="m-scrub__track" ref={scrubRef}
-               onPointerDown={onPD} onPointerMove={onPM} onPointerUp={onPU}>
+               onPointerDown={onPD} onPointerMove={onPM} onPointerUp={onPU}
+               onPointerCancel={() => setDragPct(null)}>
             <div className="m-scrub__fill" style={{ width: `${pct}%` }}>
               <div className="m-scrub__thumb" />
             </div>
@@ -300,7 +313,7 @@ function NowPlaying({ open, onClose }) {
           </button>
         </div>
 
-        <div className="m-volume">
+        {!IS_IOS && <div className="m-volume">
           <button className="m-volume__btn" onClick={toggleMute} aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}>
             <VolumeIcon level={isMuted ? 0 : volume} />
           </button>
@@ -310,7 +323,7 @@ function NowPlaying({ open, onClose }) {
               <div className="m-volume__thumb" />
             </div>
           </div>
-        </div>
+        </div>}
 
         {currentTrack.duration_seconds && (
           <div className="m-np__chips">
